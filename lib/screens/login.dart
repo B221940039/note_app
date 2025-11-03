@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )
                             : const Text(
-                          'Login',
+                          'Нэвтрэх',
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
