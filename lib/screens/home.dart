@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:assigmentv4/widgets/todo.dart';
+
+final List<Map<String, dynamic>> _checkedLists = [];
+final TextEditingController _inputToDoController = TextEditingController();
+
 
 class Note {
   final String title;
   final String content;
   final bool isLocked;
+
   Note({
     required this.title,
     required this.content,
@@ -20,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+
   List<Note> _notes = [];
   List<Note> _filteredNotes = [];
   bool _isSearching = false;
@@ -39,12 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _loadNotes() async {
     setState(() => _isLoading = true);
+
+    // Simulate loading data
     await Future.delayed(const Duration(milliseconds: 500));
+
     _notes = [
       Note(title: "Санамж", content: "Өнөөдөр 14:00 цагт уулзалттай"),
       Note(title: "Идэш", content: "Хоолны жор: гоймон, өндөг, сонгино"),
       Note(title: "Тэмдэглэл", content: "Flutter төслийн загвар шалгах"),
     ];
+
+    if (!mounted) return;
     setState(() {
       _filteredNotes = _notes;
       _isLoading = false;
@@ -95,11 +107,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
+    if (!mounted) return;
     if (confirmed == true) {
       setState(() {
         _notes.remove(note);
         _filteredNotes.remove(note);
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('"${note.title}" устгагдлаа')),
       );
@@ -141,133 +155,150 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 🔍 Search bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  offset: Offset(0, 1),
-                  blurRadius: 4,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 80),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 🔍 Search bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        offset: Offset(0, 1),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Тэмдэглэл хайх',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                      )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+
+                ToDoListSection(
+                  checkedLists: _checkedLists,
+                  inputController: _inputToDoController,
+                  onAddItem: (text) {
+                    setState(() {
+                      _checkedLists.add({'title': text, 'value': false});
+                      _inputToDoController.clear();
+                    });
+                  },
+                  onToggleItem: (index, value) {
+                    setState(() {
+                      _checkedLists[index]['value'] = value;
+                    });
+                  },
+                ),
+                // 🟩 Notes Section
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: _filteredNotes.isEmpty
+                        ? [
+                      const SizedBox(height: 60),
+                      Icon(
+                        _isSearching
+                            ? Icons.search_off
+                            : Icons.note_add_outlined,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _isSearching
+                            ? 'Тэмдэглэл олдсонгүй'
+                            : 'Тэмдэглэл байхгүй байна',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _isSearching
+                            ? 'Өөр хайлт туршиж үзнэ үү'
+                            : 'Шинэ тэмдэглэл нэмнэ үү',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                    ]
+                        : _filteredNotes.map((note) {
+                      return Card(
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        margin:
+                        const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(
+                            note.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            note.content,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteNote(note),
+                          ),
+                          onTap: () => _openNote(note),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ],
             ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Тэмдэглэл хайх',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                  },
-                )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
           ),
-
-          // 📋 Notes List
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredNotes.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _isSearching
-                        ? Icons.search_off
-                        : Icons.note_add_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _isSearching
-                        ? 'Тэмдэглэл олдсонгүй'
-                        : 'Тэмдэглэл байхгүй байна',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isSearching
-                        ? 'Өөр хайлт туршиж үзнэ үү'
-                        : 'Шинэ тэмдэглэл нэмнэ үү',
-                    style: TextStyle(color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            )
-                : RefreshIndicator(
-              onRefresh: () async {
-                await Future.delayed(
-                    const Duration(milliseconds: 800));
-                setState(() {});
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _filteredNotes.length,
-                itemBuilder: (context, index) {
-                  final note = _filteredNotes[index];
-                  return Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      title: Text(
-                        note.title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        note.content,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _deleteNote(note),
-                      ),
-                      onTap: () => _openNote(note),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
 
       // ➕ Floating Action Button
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Шинэ тэмдэглэл нэмэх үйлдэл (fake)')),
+            const SnackBar(
+              content: Text('Шинэ тэмдэглэл нэмэх үйлдэл (fake)'),
+            ),
           );
         },
         icon: const Icon(Icons.add),
