@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.of(context).pushNamed('/register');
                       },
                       child: Text(
-                        'Sign up',
+                        'Бүртгүүлэх',
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold,
