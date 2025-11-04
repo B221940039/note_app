@@ -10,9 +10,12 @@ class Note {
   final String content;
   final bool isLocked;
 
+  final Color color;
+
   Note({
     required this.title,
     required this.content,
+    required this.color,
     this.isLocked = false,
   });
 }
@@ -51,9 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.delayed(const Duration(milliseconds: 500));
 
     _notes = [
-      Note(title: "Санамж", content: "Өнөөдөр 14:00 цагт уулзалттай"),
-      Note(title: "Идэш", content: "Хоолны жор: гоймон, өндөг, сонгино"),
-      Note(title: "Тэмдэглэл", content: "Flutter төслийн загвар шалгах"),
+      Note(title: "Санамж", content: "Өнөөдөр 14:00 цагт уулзалттай",  color: Colors.yellow),
+      Note(title: "Идэш", content: "Хоолны жор: гоймон, өндөг, сонгино Хоолны жор: гоймон, өндөг, сонгиноХоолны жор: гоймон, өндөг, сонгино", color: Colors.red),
+      Note(title: "Тэмдэглэл", content: "Flutter төслийн загвар шалгах", color: Colors.green),
     ];
 
     if (!mounted) return;
@@ -168,16 +171,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // 🔍 Search bar
                   Container(
-                    padding: const EdgeInsets.all(16),
                     decoration: const BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          offset: Offset(0, 1),
-                          blurRadius: 4,
-                        ),
-                      ],
+
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -225,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   // 🟩 Notes Section
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(0),
                     child: Column(
                       children: _filteredNotes.isEmpty
                           ? [
@@ -258,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ]
                           : _filteredNotes.map((note) {
                         return Card(
-                          color: Colors.white,
+                          color: note.color,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -278,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline),
+                              icon: const Icon(Icons.more_horiz),
                               onPressed: () => _deleteNote(note),
                             ),
                             onTap: () => _openNote(note),
@@ -295,8 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
 
-      // ➕ Floating Action Button
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -304,10 +298,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text("Нэмэх"),
         backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add),
       ),
+
     );
   }
 }
