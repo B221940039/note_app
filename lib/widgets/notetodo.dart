@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class ToDo extends StatefulWidget {
+class NoteToDo extends StatefulWidget {
   final List<Map<String, dynamic>> checkedLists;
   final TextEditingController inputController;
   final void Function(String) onAddItem;
   final void Function(int, bool) onToggleItem;
 
-  const ToDo({
+  const NoteToDo({
     super.key,
     required this.checkedLists,
     required this.inputController,
@@ -15,10 +15,10 @@ class ToDo extends StatefulWidget {
   });
 
   @override
-  State<ToDo> createState() => _ToDoState();
+  State<NoteToDo> createState() => _NoteToDoState();
 }
 
-class _ToDoState extends State<ToDo> {
+class _NoteToDoState extends State<NoteToDo> {
   void noteTypePicker() {
 
   }
@@ -29,7 +29,6 @@ class _ToDoState extends State<ToDo> {
     final totalCount = widget.checkedLists.length;
 
     return Container(
-      width: 360,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1C1C1E), // dark background like iOS widget
@@ -37,61 +36,15 @@ class _ToDoState extends State<ToDo> {
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: widget.checkedLists.isEmpty ? 0 : 16,
+
           children: [
-            // 🔶 Header section (Icon + Number + Label on left, items on right)
+
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left side: Icon, Number, Label
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // 🟠 Circular icon background
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF9F0A), // iOS orange
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.list,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    const SizedBox(height: 4),
-
-                    // 🟠 Label text with counter
-                    Text(
-                      "Reminders",
-                      style: const TextStyle(
-                        color: Color(0xFFFF9F0A),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    Text(
-                      "$checkedCount/$totalCount",
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 20),
-
-                // Right side: Todo list items
                 Expanded(
-                    child: totalCount == 0 ? Center(child: Text("Тэмэдэглэл нэмннэ үү.", style: TextStyle(color: Colors.white, fontSize: 19),)) :
-
-                   Column(
+                  child: Column(
                     children: [
                       ...widget.checkedLists.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -142,7 +95,6 @@ class _ToDoState extends State<ToDo> {
               ],
             ),
 
-            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(

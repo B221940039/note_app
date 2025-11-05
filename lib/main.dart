@@ -1,4 +1,5 @@
 
+import 'package:assigmentv4/screens/notetyping.dart';
 import 'package:flutter/material.dart';
 import 'screens/login.dart' ;
 import 'screens/register.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
+        '/noteTyping': (context) => const NoteTyping(),
       },
     );
   }
@@ -105,6 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/login');}, child: Text('Login')),
             ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/register');}, child: Text('Sign Up')),
             ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/home');}, child: Text('Home Screen')),
+            ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/noteTyping');}, child: Text('Note Typing'))
           ],
         ),
       ),

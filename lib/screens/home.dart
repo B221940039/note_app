@@ -4,7 +4,11 @@ import 'package:assigmentv4/widgets/todo.dart';
 final List<Map<String, dynamic>> _checkedLists = [];
 final TextEditingController _inputToDoController = TextEditingController();
 
-
+final List<String> _noteTypes = [
+  'typing',
+  'audio',
+  'video',
+];
 class Note {
   final String title;
   final String content;
@@ -203,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  ToDoListSection(
+                  ToDo(
                     checkedLists: _checkedLists,
                     inputController: _inputToDoController,
                     onAddItem: (text) {
