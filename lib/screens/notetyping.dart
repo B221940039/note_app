@@ -319,7 +319,7 @@ class _NoteTypingState extends State<NoteTyping> {
               children: [
                 IconButton(
                   onPressed: _showColorPicker,
-                  icon: const Icon(Iz cons.color_lens),
+                  icon: const Icon(Icons.color_lens),
                   tooltip: 'Change color',
                 ),
                 IconButton(
