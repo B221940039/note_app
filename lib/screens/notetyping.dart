@@ -1,5 +1,7 @@
+import '../widgets/recordvideo.dart';
 import 'package:flutter/material.dart';
 import '../widgets/notetodo.dart';
+import '../widgets/recordaudio.dart';
 
 class Note {
   final int id;
@@ -103,7 +105,9 @@ class _NoteTypingState extends State<NoteTyping> {
                         color: color ?? Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: color == null ? Colors.grey : Colors.transparent,
+                          color: color == null
+                              ? Colors.grey
+                              : Colors.transparent,
                           width: 2,
                         ),
                         boxShadow: [
@@ -116,18 +120,53 @@ class _NoteTypingState extends State<NoteTyping> {
                       ),
                       child: isSelected
                           ? Icon(
-                        Icons.check,
-                        color: color == null ? Colors.black : Colors.white,
-                        size: 28,
-                      )
+                              Icons.check,
+                              color: color == null
+                                  ? Colors.black
+                                  : Colors.white,
+                              size: 28,
+                            )
                           : (color == null
-                          ? Icon(Icons.format_color_reset, color: Colors.grey[600])
-                          : null),
+                                ? Icon(
+                                    Icons.format_color_reset,
+                                    color: Colors.grey[600],
+                                  )
+                                : null),
                     ),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMoreOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'More Options',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete Note'),
+              ),
             ],
           ),
         );
@@ -142,9 +181,9 @@ class _NoteTypingState extends State<NoteTyping> {
     final tag = _tagController.text.trim();
 
     if (title.isEmpty && content.isEmpty && _checkedLists.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note is empty!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Note is empty!')));
       return;
     }
 
@@ -163,26 +202,31 @@ class _NoteTypingState extends State<NoteTyping> {
     print('Color: ${note.color}');
     print('Todo items: $_checkedLists');
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Note saved!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Note saved!')));
 
     Navigator.pop(context, note);
+  }
+
+  void _handleRecordingComplete(String filePath) {
+    print('Recording saved at: $filePath');
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Recording saved at: $filePath')));
   }
 
   // ------------------- UI -------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _selectedColor ?? Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor:
+          _selectedColor ?? Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: _selectedColor,
         title: const Text('New Note'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveNote,
-          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _saveNote),
         ],
       ),
       body: Column(
@@ -213,13 +257,8 @@ class _NoteTypingState extends State<NoteTyping> {
                       labelText: 'Tag (e.g. work, study, personal)',
                       border: InputBorder.none,
                     ),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
-
-
 
                   // Note content
                   TextField(
@@ -232,8 +271,6 @@ class _NoteTypingState extends State<NoteTyping> {
                       border: InputBorder.none,
                     ),
                   ),
-
-
 
                   // Todo List
                   NoteToDo(
@@ -259,8 +296,6 @@ class _NoteTypingState extends State<NoteTyping> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [Text(dateCreated.toString())],
                   ),
-
-                 
                 ],
               ),
             ),
@@ -269,27 +304,54 @@ class _NoteTypingState extends State<NoteTyping> {
           // Fixed bottom actions
           Container(
             decoration: BoxDecoration(
-              color: _selectedColor ?? Theme.of(context).scaffoldBackgroundColor,
+              color:
+                  _selectedColor ?? Theme.of(context).scaffoldBackgroundColor,
               border: Border(
-                top: BorderSide(
-                  color: Colors.grey.withOpacity(0.3),
-                  width: 1,
-                ),
+                top: BorderSide(color: Colors.grey.withOpacity(0.3), width: 1),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
                   onPressed: _showColorPicker,
-                  icon: const Icon(Icons.color_lens),
+                  icon: const Icon(Iz cons.color_lens),
                   tooltip: 'Change color',
                 ),
                 IconButton(
                   onPressed: () {
-                    // Add more options like typography, delete, share, etc.
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder: (BuildContext context) {
+                        return RecordAudioWidget(
+                          onRecordingComplete: _handleRecordingComplete,
+                        );
+                      },
+                    );
                   },
+                  icon: const Icon(Icons.mic),
+                ),
+                IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return RecordVideoWidget(
+                          onRecordingComplete: _handleRecordingComplete,
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.videocam),
+                ),
+                IconButton(
+                  onPressed: _showMoreOptions,
+
                   icon: const Icon(Icons.more_vert),
                   tooltip: 'More options',
                 ),

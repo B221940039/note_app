@@ -1,9 +1,9 @@
-
 import 'package:assigmentv4/screens/notetyping.dart';
 import 'package:flutter/material.dart';
-import 'screens/login.dart' ;
+import 'screens/login.dart';
 import 'screens/register.dart';
 import 'screens/home.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         // This is the theme of your application.
         //
         // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
+        // the application has  purple toolbar. Then, without quitting the app,
         // try changing the seedColor in the colorScheme below to Colors.green
         // and then invoke "hot reload" (save your changes or press the "hot
         // reload" button in a Flutter-supported IDE, or press "r" if you used
@@ -64,8 +64,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -104,14 +102,33 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(''),
-            ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/login');}, child: Text('Login')),
-            ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/register');}, child: Text('Sign Up')),
-            ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/home');}, child: Text('Home Screen')),
-            ElevatedButton(onPressed: (){Navigator.of(context).pushNamed('/noteTyping');}, child: Text('Note Typing'))
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/login');
+              },
+              child: Text('Login'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/register');
+              },
+              child: Text('Sign Up'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/home');
+              },
+              child: Text('Home Screen'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/noteTyping');
+              },
+              child: Text('Note Typing'),
+            ),
           ],
         ),
       ),
-
     );
   }
 }

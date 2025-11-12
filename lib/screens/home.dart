@@ -4,11 +4,8 @@ import 'package:assigmentv4/widgets/todo.dart';
 final List<Map<String, dynamic>> _checkedLists = [];
 final TextEditingController _inputToDoController = TextEditingController();
 
-final List<String> _noteTypes = [
-  'typing',
-  'audio',
-  'video',
-];
+final List<String> _noteTypes = ['typing', 'audio', 'video'];
+
 class Note {
   final String title;
   final String content;
@@ -58,9 +55,22 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.delayed(const Duration(milliseconds: 500));
 
     _notes = [
-      Note(title: "Санамж", content: "Өнөөдөр 14:00 цагт уулзалттай",  color: Colors.yellow),
-      Note(title: "Идэш", content: "Хоолны жор: гоймон, өндөг, сонгино Хоолны жор: гоймон, өндөг, сонгиноХоолны жор: гоймон, өндөг, сонгино", color: Colors.red),
-      Note(title: "Тэмдэглэл", content: "Flutter төслийн загвар шалгах", color: Colors.green),
+      Note(
+        title: "Санамж",
+        content: "Өнөөдөр 14:00 цагт уулзалттай",
+        color: Colors.yellow,
+      ),
+      Note(
+        title: "Идэш",
+        content:
+            "Хоолны жор: гоймон, өндөг, сонгино Хоолны жор: гоймон, өндөг, сонгиноХоолны жор: гоймон, өндөг, сонгино",
+        color: Colors.red,
+      ),
+      Note(
+        title: "Тэмдэглэл",
+        content: "Flutter төслийн загвар шалгах",
+        color: Colors.green,
+      ),
     ];
 
     if (!mounted) return;
@@ -80,9 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isSearching = true;
         _filteredNotes = _notes
-            .where((note) =>
-        note.title.toLowerCase().contains(query.toLowerCase()) ||
-            note.content.toLowerCase().contains(query.toLowerCase()))
+            .where(
+              (note) =>
+                  note.title.toLowerCase().contains(query.toLowerCase()) ||
+                  note.content.toLowerCase().contains(query.toLowerCase()),
+            )
             .toList();
       });
     }
@@ -121,9 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _filteredNotes.remove(note);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${note.title}" устгагдлаа')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('"${note.title}" устгагдлаа')));
     }
   }
 
@@ -163,149 +175,146 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(padding: EdgeInsetsGeometry.only(left: 20, right: 20),
+        child: Padding(
+          padding: EdgeInsetsGeometry.only(left: 20, right: 20),
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 80),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 🔍 Search bar
-                  Container(
-                    decoration: const BoxDecoration(
-
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Тэмдэглэл хайх',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _onSearchChanged('');
-                          },
-                        )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  ToDo(
-                    checkedLists: _checkedLists,
-                    inputController: _inputToDoController,
-                    onAddItem: (text) {
-                      setState(() {
-                        _checkedLists.add({'title': text, 'value': false});
-                        _inputToDoController.clear();
-                      });
-                    },
-                    onToggleItem: (index, value) {
-                      setState(() {
-                        _checkedLists[index]['value'] = value;
-                      });
-                    },
-                  ),
-                  // 🟩 Notes Section
-                  Padding(
-                    padding: const EdgeInsets.all(0),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 80),
                     child: Column(
-                      children: _filteredNotes.isEmpty
-                          ? [
-                        const SizedBox(height: 60),
-                        Icon(
-                          _isSearching
-                              ? Icons.search_off
-                              : Icons.note_add_outlined,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _isSearching
-                              ? 'Тэмдэглэл олдсонгүй'
-                              : 'Тэмдэглэл байхгүй байна',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isSearching
-                              ? 'Өөр хайлт туршиж үзнэ үү'
-                              : 'Шинэ тэмдэглэл нэмнэ үү',
-                          style: TextStyle(color: Colors.grey[500]),
-                        ),
-                      ]
-                          : _filteredNotes.map((note) {
-                        return Card(
-                          color: note.color,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                          margin:
-                          const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            title: Text(
-                              note.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 🔍 Search bar
+                        Container(
+                          decoration: const BoxDecoration(),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: 'Тэмдэглэл хайх',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _onSearchChanged('');
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
                             ),
-                            subtitle: Text(
-                              note.content,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.more_horiz),
-                              onPressed: () => _deleteNote(note),
-                            ),
-                            onTap: () => _openNote(note),
                           ),
-                        );
-                      }).toList(),
+                        ),
+
+                        ToDo(
+                          checkedLists: _checkedLists,
+                          inputController: _inputToDoController,
+                          onAddItem: (text) {
+                            setState(() {
+                              _checkedLists.add({
+                                'title': text,
+                                'value': false,
+                              });
+                              _inputToDoController.clear();
+                            });
+                          },
+                          onToggleItem: (index, value) {
+                            setState(() {
+                              _checkedLists[index]['value'] = value;
+                            });
+                          },
+                        ),
+                        // 🟩 Notes Section
+                        Padding(
+                          padding: const EdgeInsets.all(0),
+                          child: Column(
+                            children: _filteredNotes.isEmpty
+                                ? [
+                                    const SizedBox(height: 60),
+                                    Icon(
+                                      _isSearching
+                                          ? Icons.search_off
+                                          : Icons.note_add_outlined,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _isSearching
+                                          ? 'Тэмдэглэл олдсонгүй'
+                                          : 'Тэмдэглэл байхгүй байна',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _isSearching
+                                          ? 'Өөр хайлт туршиж үзнэ үү'
+                                          : 'Шинэ тэмдэглэл нэмнэ үү',
+                                      style: TextStyle(color: Colors.grey[500]),
+                                    ),
+                                  ]
+                                : _filteredNotes.map((note) {
+                                    return Card(
+                                      color: note.color,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 2,
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      child: ListTile(
+                                        title: Text(
+                                          note.title,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          note.content,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.more_horiz),
+                                          onPressed: () => _deleteNote(note),
+                                        ),
+                                        onTap: () => _openNote(note),
+                                      ),
+                                    );
+                                  }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                ),
         ),
-        ),
-
+      ),
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Шинэ тэмдэглэл нэмэх үйлдэл (fake)'),
-            ),
+            const SnackBar(content: Text('Шинэ тэмдэглэл нэмэх үйлдэл (fake)')),
           );
         },
         backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add),
       ),
-
     );
   }
 }
