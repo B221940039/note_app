@@ -15,7 +15,6 @@ class RecordVideoWidget extends StatefulWidget {
 class _RecordVideoWidgetState extends State<RecordVideoWidget> {
   CameraController? _cameraController;
   bool _isRecording = false;
-  String _videoFilePath = '';
   bool _cameraInitialized = false;
   Timer? _timer;
   int _elapsedSeconds = 0;
@@ -70,11 +69,9 @@ class _RecordVideoWidgetState extends State<RecordVideoWidget> {
 
   Future<void> _startRecording() async {
     try {
-      final filePath = 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
       await _cameraController?.startVideoRecording();
       setState(() {
         _isRecording = true;
-        _videoFilePath = filePath;
       });
       _startTimer();
     } catch (e) {
@@ -87,12 +84,15 @@ class _RecordVideoWidgetState extends State<RecordVideoWidget> {
 
   Future<void> _stopRecording() async {
     try {
-      await _cameraController?.stopVideoRecording();
+      final videoFile = await _cameraController?.stopVideoRecording();
       setState(() {
         _isRecording = false;
       });
       _stopTimer();
-      widget.onRecordingComplete(_videoFilePath);
+
+      if (videoFile != null) {
+        widget.onRecordingComplete(videoFile.path);
+      }
     } catch (e) {
       print('Error stopping video recording: $e');
       ScaffoldMessenger.of(
@@ -119,16 +119,7 @@ class _RecordVideoWidgetState extends State<RecordVideoWidget> {
             ),
           )
         else
-          Container(
-            height: 200,
-            color: Colors.black,
-            child: const Center(
-              child: Text(
-                'Camera not available',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
+          Container(height: 200, color: Colors.black),
         Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(color: Colors.black),

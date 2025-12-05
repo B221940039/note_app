@@ -29,13 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = null;
       });
 
-
       if (_usernameController.text == "admin" &&
           _passwordController.text == "1234") {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Successful!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Login Successful!')));
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
         setState(() {
@@ -85,10 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to continue',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
@@ -151,17 +149,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: _isLoading
                             ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
                             : const Text(
-                          'Нэвтрэх',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                                'Нэвтрэх',
+                                style: TextStyle(fontSize: 16),
+                              ),
                       ),
 
                       const SizedBox(height: 16),
@@ -177,8 +175,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline,
-                                  color: Colors.red[600], size: 20),
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red[600],
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(

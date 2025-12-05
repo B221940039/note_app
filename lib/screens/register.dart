@@ -45,8 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
         setState(() {
-          _errorMessage =
-          'Username already exists. Try "newuser" for testing.';
+          _errorMessage = 'Username already exists. Try "newuser" for testing.';
         });
       }
 
@@ -92,10 +91,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Sign up to get started',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
@@ -180,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onPressed: () {
                               setState(() {
                                 _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible;
+                                    !_isConfirmPasswordVisible;
                               });
                             },
                           ),
@@ -206,15 +204,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: _isLoading
                             ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                            : const Text('Create Account',
-                            style: TextStyle(fontSize: 16)),
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Create Account',
+                                style: TextStyle(fontSize: 16),
+                              ),
                       ),
 
                       const SizedBox(height: 16),
@@ -230,8 +230,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline,
-                                  color: Colors.red[600], size: 20),
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red[600],
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:async';
+import 'dart:io';
 
 class RecordAudioWidget extends StatefulWidget {
   final Function(String) onRecordingComplete;
@@ -54,7 +56,9 @@ class _RecordAudioWidgetState extends State<RecordAudioWidget> {
   }
 
   Future<void> _startRecording() async {
-    final filePath = 'audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath =
+        '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.aac';
     await _recorder.startRecorder(toFile: filePath);
     setState(() {
       _isRecording = true;
@@ -85,6 +89,17 @@ class _RecordAudioWidgetState extends State<RecordAudioWidget> {
       _isPaused = false;
     });
     _stopTimer();
+
+    // Verify file was created
+    final file = File(_recordingFilePath);
+    final exists = await file.exists();
+    print('Audio recording stopped, file path: $_recordingFilePath');
+    print('File exists after recording: $exists');
+    if (exists) {
+      final size = await file.length();
+      print('Audio file size: $size bytes');
+    }
+
     widget.onRecordingComplete(_recordingFilePath);
   }
 
