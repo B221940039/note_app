@@ -67,6 +67,7 @@ class _TodoScreenState extends State<TodoScreen> {
       );
       await DatabaseHelper.instance.insertTodo(todo.toMap());
       await _loadUserTodos();
+      setState(() {}); // Refresh UI to show new todo
     } catch (e) {
       print('Error adding todo: $e');
     }
@@ -74,10 +75,27 @@ class _TodoScreenState extends State<TodoScreen> {
 
   Future<void> _toggleUserTodo(TodoModel todo) async {
     try {
-      await DatabaseHelper.instance.deleteTodo(todo.id!);
-      await _loadUserTodos();
+      final updatedTodo = TodoModel(
+        id: todo.id,
+        title: todo.title,
+        isCompleted: !todo.isCompleted,
+        createdDate: todo.createdDate,
+        deadline: todo.deadline,
+      );
+      await DatabaseHelper.instance.updateTodo(updatedTodo.toMap());
+      await _loadData(); // Reload all data to ensure full refresh
     } catch (e) {
       print('Error toggling todo: $e');
+    }
+  }
+
+  Future<void> _deleteUserTodo(TodoModel todo) async {
+    try {
+      await DatabaseHelper.instance.deleteTodo(todo.id!);
+      await _loadUserTodos();
+      setState(() {}); // Refresh UI
+    } catch (e) {
+      print('Error deleting todo: $e');
     }
   }
 
@@ -100,8 +118,34 @@ class _TodoScreenState extends State<TodoScreen> {
 
       await DatabaseHelper.instance.updateNote(updatedNote.toMap());
       await _loadNotes();
+      setState(() {}); // Refresh UI
     } catch (e) {
       print('Error toggling note todo: $e');
+    }
+  }
+
+  Future<void> _deleteNoteTodo(NoteModel note, int todoIndex) async {
+    try {
+      final updatedTodoItems = List<Map<String, dynamic>>.from(note.todoItems);
+      updatedTodoItems.removeAt(todoIndex);
+
+      final updatedNote = NoteModel(
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        tag: note.tag,
+        color: note.color,
+        dateCreated: note.dateCreated,
+        audioPath: note.audioPath,
+        videoPath: note.videoPath,
+        todoItems: updatedTodoItems,
+      );
+
+      await DatabaseHelper.instance.updateNote(updatedNote.toMap());
+      await _loadNotes();
+      setState(() {}); // Refresh UI
+    } catch (e) {
+      print('Error deleting note todo: $e');
     }
   }
 
@@ -128,9 +172,14 @@ class _TodoScreenState extends State<TodoScreen> {
   @override
   Widget build(BuildContext context) {
     final activeUserTodos = _userTodos.where((t) => !t.isCompleted).length;
+    final completedUserTodos = _userTodos.where((t) => t.isCompleted).length;
     final activeNoteTodos = _countNoteTodos(completed: false);
     final completedNoteTodos = _countNoteTodos(completed: true);
-    final totalTodos = activeUserTodos + activeNoteTodos + completedNoteTodos;
+    final totalTodos =
+        activeUserTodos +
+        completedUserTodos +
+        activeNoteTodos +
+        completedNoteTodos;
 
     return Scaffold(
       body: Container(
@@ -182,7 +231,8 @@ class _TodoScreenState extends State<TodoScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: [
                                   Column(
                                     children: [
@@ -211,7 +261,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                   Column(
                                     children: [
                                       Text(
-                                        '$completedNoteTodos',
+                                        '${completedUserTodos + completedNoteTodos}',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 24,
@@ -267,7 +317,8 @@ class _TodoScreenState extends State<TodoScreen> {
                               child: totalTodos == 0
                                   ? Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Icon(
                                             Icons.check_circle_outline,
@@ -291,7 +342,9 @@ class _TodoScreenState extends State<TodoScreen> {
                                       children: [
                                         if (activeUserTodos > 0) ...[
                                           const Padding(
-                                            padding: EdgeInsets.only(bottom: 12),
+                                            padding: EdgeInsets.only(
+                                              bottom: 12,
+                                            ),
                                             child: Text(
                                               'Your Active Todos',
                                               style: TextStyle(
@@ -301,29 +354,53 @@ class _TodoScreenState extends State<TodoScreen> {
                                               ),
                                             ),
                                           ),
-                                          ..._userTodos.where((t) => !t.isCompleted).map((todo) {
+                                          ..._userTodos.where((t) => !t.isCompleted).map((
+                                            todo,
+                                          ) {
                                             return Card(
-                                              margin: const EdgeInsets.only(bottom: 8),
+                                              margin: const EdgeInsets.only(
+                                                bottom: 8,
+                                              ),
                                               child: ListTile(
                                                 leading: GestureDetector(
-                                                  onTap: () => _toggleUserTodo(todo),
+                                                  onTap: () =>
+                                                      _toggleUserTodo(todo),
                                                   child: const Icon(
-                                                    Icons.radio_button_unchecked,
+                                                    Icons
+                                                        .radio_button_unchecked,
                                                     color: Color(0xFF7C3AED),
                                                   ),
                                                 ),
                                                 title: Text(todo.title),
                                                 subtitle: Text(
-                                                  '${todo.createdDate?.toString().substring(0, 16) ?? ''}${todo.deadline != null ? '  ${todo.deadline!.toString().substring(0, 10)}' : ''}',
+                                                  '${todo.createdDate?.toString().substring(0, 16) ?? ''}${todo.deadline != null ? ' → ${todo.deadline!.toString().substring(0, 10)}' : ''}',
                                                   style: TextStyle(
                                                     fontSize: 11,
-                                                    color: todo.deadline != null && todo.deadline!.isBefore(DateTime.now())
+                                                    color:
+                                                        todo.deadline != null &&
+                                                            todo.deadline!
+                                                                .isBefore(
+                                                                  DateTime.now(),
+                                                                )
                                                         ? Colors.red
                                                         : Colors.grey[600],
-                                                    fontWeight: todo.deadline != null && todo.deadline!.isBefore(DateTime.now())
+                                                    fontWeight:
+                                                        todo.deadline != null &&
+                                                            todo.deadline!
+                                                                .isBefore(
+                                                                  DateTime.now(),
+                                                                )
                                                         ? FontWeight.bold
                                                         : FontWeight.normal,
                                                   ),
+                                                ),
+                                                trailing: IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete_outline,
+                                                    color: Colors.red,
+                                                  ),
+                                                  onPressed: () =>
+                                                      _deleteUserTodo(todo),
                                                 ),
                                               ),
                                             );
@@ -332,7 +409,9 @@ class _TodoScreenState extends State<TodoScreen> {
                                         ],
                                         if (activeNoteTodos > 0) ...[
                                           const Padding(
-                                            padding: EdgeInsets.only(bottom: 12),
+                                            padding: EdgeInsets.only(
+                                              bottom: 12,
+                                            ),
                                             child: Text(
                                               'Active Note Todos',
                                               style: TextStyle(
@@ -346,60 +425,128 @@ class _TodoScreenState extends State<TodoScreen> {
                                             return note.todoItems
                                                 .asMap()
                                                 .entries
-                                                .where((entry) => entry.value['value'] != true)
+                                                .where(
+                                                  (entry) =>
+                                                      entry.value['value'] !=
+                                                      true,
+                                                )
                                                 .map((entry) {
-                                              final todoIndex = entry.key;
-                                              final todo = entry.value;
-                                              return Card(
-                                                margin: const EdgeInsets.only(bottom: 8),
-                                                child: ListTile(
-                                                  leading: GestureDetector(
-                                                    onTap: () => _toggleNoteTodo(note, todoIndex),
-                                                    child: const Icon(
-                                                      Icons.radio_button_unchecked,
-                                                      color: Color(0xFF7C3AED),
-                                                    ),
-                                                  ),
-                                                  title: Text(todo['title']),
-                                                  subtitle: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        'from: ${note.title}',
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontStyle: FontStyle.italic,
-                                                          color: Colors.grey,
+                                                  final todoIndex = entry.key;
+                                                  final todo = entry.value;
+                                                  return Card(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 8,
                                                         ),
-                                                      ),
-                                                      if (todo['createdDate'] != null || todo['deadline'] != null)
-                                                        Text(
-                                                          '${todo['createdDate'] != null ? DateTime.parse(todo['createdDate']).toString().substring(0, 16) : ''}${todo['deadline'] != null ? '  ${DateTime.parse(todo['deadline']).toString().substring(0, 10)}' : ''}',
-                                                          style: TextStyle(
-                                                            fontSize: 11,
-                                                            color: todo['deadline'] != null && DateTime.parse(todo['deadline']).isBefore(DateTime.now())
-                                                                ? Colors.red
-                                                                : Colors.grey[600],
-                                                            fontWeight: todo['deadline'] != null && DateTime.parse(todo['deadline']).isBefore(DateTime.now())
-                                                                ? FontWeight.bold
-                                                                : FontWeight.normal,
+                                                    child: ListTile(
+                                                      leading: GestureDetector(
+                                                        onTap: () =>
+                                                            _toggleNoteTodo(
+                                                              note,
+                                                              todoIndex,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons
+                                                              .radio_button_unchecked,
+                                                          color: Color(
+                                                            0xFF7C3AED,
                                                           ),
                                                         ),
-                                                    ],
-                                                  ),
-                                                  trailing: IconButton(
-                                                    icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                                                    onPressed: () => _openNote(note),
-                                                  ),
-                                                ),
-                                              );
-                                            });
+                                                      ),
+                                                      title: Text(
+                                                        todo['title'],
+                                                      ),
+                                                      subtitle: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            'from: ${note.title}',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 12,
+                                                                  fontStyle:
+                                                                      FontStyle
+                                                                          .italic,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
+                                                          ),
+                                                          if (todo['createdDate'] !=
+                                                                  null ||
+                                                              todo['deadline'] !=
+                                                                  null)
+                                                            Text(
+                                                              '${todo['createdDate'] != null ? DateTime.parse(todo['createdDate']).toString().substring(0, 16) : ''}${todo['deadline'] != null ? '  ${DateTime.parse(todo['deadline']).toString().substring(0, 10)}' : ''}',
+                                                              style: TextStyle(
+                                                                fontSize: 11,
+                                                                color:
+                                                                    todo['deadline'] !=
+                                                                            null &&
+                                                                        DateTime.parse(
+                                                                          todo['deadline'],
+                                                                        ).isBefore(
+                                                                          DateTime.now(),
+                                                                        )
+                                                                    ? Colors.red
+                                                                    : Colors
+                                                                          .grey[600],
+                                                                fontWeight:
+                                                                    todo['deadline'] !=
+                                                                            null &&
+                                                                        DateTime.parse(
+                                                                          todo['deadline'],
+                                                                        ).isBefore(
+                                                                          DateTime.now(),
+                                                                        )
+                                                                    ? FontWeight
+                                                                          .bold
+                                                                    : FontWeight
+                                                                          .normal,
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                      trailing: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .delete_outline,
+                                                              color: Colors.red,
+                                                            ),
+                                                            onPressed: () =>
+                                                                _deleteNoteTodo(
+                                                                  note,
+                                                                  todoIndex,
+                                                                ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .arrow_forward_ios,
+                                                              size: 16,
+                                                            ),
+                                                            onPressed: () =>
+                                                                _openNote(note),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  );
+                                                });
                                           }),
                                           const SizedBox(height: 20),
                                         ],
-                                        if (completedNoteTodos > 0) ...[
+                                        if (completedUserTodos > 0 ||
+                                            completedNoteTodos > 0) ...[
                                           const Padding(
-                                            padding: EdgeInsets.only(bottom: 12),
+                                            padding: EdgeInsets.only(
+                                              bottom: 12,
+                                            ),
                                             child: Text(
                                               'Completed Todos',
                                               style: TextStyle(
@@ -409,80 +556,188 @@ class _TodoScreenState extends State<TodoScreen> {
                                               ),
                                             ),
                                           ),
+                                          ..._userTodos
+                                              .where((t) => t.isCompleted)
+                                              .map((todo) {
+                                                return Card(
+                                                  margin: const EdgeInsets.only(
+                                                    bottom: 8,
+                                                  ),
+                                                  color: Colors.grey[100],
+                                                  child: ListTile(
+                                                    leading: GestureDetector(
+                                                      onTap: () =>
+                                                          _toggleUserTodo(todo),
+                                                      child: const Icon(
+                                                        Icons.check_circle,
+                                                        color: Colors.green,
+                                                      ),
+                                                    ),
+                                                    title: Text(
+                                                      todo.title,
+                                                      style: const TextStyle(
+                                                        decoration:
+                                                            TextDecoration
+                                                                .lineThrough,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    subtitle: Text(
+                                                      '${todo.createdDate?.toString().substring(0, 16) ?? ''}${todo.deadline != null ? ' → ${todo.deadline!.toString().substring(0, 10)}' : ''}',
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    trailing: IconButton(
+                                                      icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
+                                                      ),
+                                                      onPressed: () =>
+                                                          _deleteUserTodo(todo),
+                                                    ),
+                                                  ),
+                                                );
+                                              }),
                                           ..._notes.expand((note) {
                                             return note.todoItems
                                                 .asMap()
                                                 .entries
-                                                .where((entry) => entry.value['value'] == true)
+                                                .where(
+                                                  (entry) =>
+                                                      entry.value['value'] ==
+                                                      true,
+                                                )
                                                 .map((entry) {
-                                              final todoIndex = entry.key;
-                                              final todo = entry.value;
-                                              return Card(
-                                                margin: const EdgeInsets.only(bottom: 8),
-                                                color: Colors.grey[100],
-                                                child: ListTile(
-                                                  leading: GestureDetector(
-                                                    onTap: () async {
-                                                      final updatedTodoItems = List<Map<String, dynamic>>.from(note.todoItems);
-                                                      updatedTodoItems[todoIndex]['value'] = false;
-                                                      final updatedNote = NoteModel(
-                                                        id: note.id,
-                                                        title: note.title,
-                                                        content: note.content,
-                                                        tag: note.tag,
-                                                        color: note.color,
-                                                        dateCreated: note.dateCreated,
-                                                        audioPath: note.audioPath,
-                                                        videoPath: note.videoPath,
-                                                        todoItems: updatedTodoItems,
-                                                      );
-                                                      await DatabaseHelper.instance.updateNote(updatedNote.toMap());
-                                                      await _loadNotes();
-                                                    },
-                                                    child: const Icon(
-                                                      Icons.check_circle,
-                                                      color: Colors.green,
-                                                    ),
-                                                  ),
-                                                  title: Text(
-                                                    todo['title'],
-                                                    style: const TextStyle(
-                                                      decoration: TextDecoration.lineThrough,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                  subtitle: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        'from: ${note.title}',
+                                                  final todoIndex = entry.key;
+                                                  final todo = entry.value;
+                                                  return Card(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 8,
+                                                        ),
+                                                    color: Colors.grey[100],
+                                                    child: ListTile(
+                                                      leading: GestureDetector(
+                                                        onTap: () async {
+                                                          final updatedTodoItems =
+                                                              List<
+                                                                Map<
+                                                                  String,
+                                                                  dynamic
+                                                                >
+                                                              >.from(
+                                                                note.todoItems,
+                                                              );
+                                                          updatedTodoItems[todoIndex]['value'] =
+                                                              false;
+                                                          final updatedNote =
+                                                              NoteModel(
+                                                                id: note.id,
+                                                                title:
+                                                                    note.title,
+                                                                content: note
+                                                                    .content,
+                                                                tag: note.tag,
+                                                                color:
+                                                                    note.color,
+                                                                dateCreated: note
+                                                                    .dateCreated,
+                                                                audioPath: note
+                                                                    .audioPath,
+                                                                videoPath: note
+                                                                    .videoPath,
+                                                                todoItems:
+                                                                    updatedTodoItems,
+                                                              );
+                                                          await DatabaseHelper
+                                                              .instance
+                                                              .updateNote(
+                                                                updatedNote
+                                                                    .toMap(),
+                                                              );
+                                                          await _loadData();
+                                                        },
+                                                        child: const Icon(
+                                                          Icons.check_circle,
+                                                          color: Colors.green,
+                                                        ),
+                                                      ),
+                                                      title: Text(
+                                                        todo['title'],
                                                         style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontStyle: FontStyle.italic,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .lineThrough,
                                                           color: Colors.grey,
                                                         ),
                                                       ),
-                                                      if (todo['createdDate'] != null || todo['deadline'] != null)
-                                                        Text(
-                                                          '${todo['createdDate'] != null ? DateTime.parse(todo['createdDate']).toString().substring(0, 16) : ''}${todo['deadline'] != null ? '  ${DateTime.parse(todo['deadline']).toString().substring(0, 10)}' : ''}',
-                                                          style: const TextStyle(
-                                                            fontSize: 11,
-                                                            color: Colors.grey,
+                                                      subtitle: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            'from: ${note.title}',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 12,
+                                                                  fontStyle:
+                                                                      FontStyle
+                                                                          .italic,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
                                                           ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                  trailing: IconButton(
-                                                    icon: const Icon(
-                                                      Icons.arrow_forward_ios,
-                                                      size: 16,
-                                                      color: Colors.grey,
+                                                          if (todo['createdDate'] !=
+                                                                  null ||
+                                                              todo['deadline'] !=
+                                                                  null)
+                                                            Text(
+                                                              '${todo['createdDate'] != null ? DateTime.parse(todo['createdDate']).toString().substring(0, 16) : ''}${todo['deadline'] != null ? '  ${DateTime.parse(todo['deadline']).toString().substring(0, 10)}' : ''}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                    fontSize:
+                                                                        11,
+                                                                    color: Colors
+                                                                        .grey,
+                                                                  ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                      trailing: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .delete_outline,
+                                                              color: Colors.red,
+                                                            ),
+                                                            onPressed: () =>
+                                                                _deleteNoteTodo(
+                                                                  note,
+                                                                  todoIndex,
+                                                                ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons
+                                                                  .arrow_forward_ios,
+                                                              size: 16,
+                                                              color:
+                                                                  Colors.grey,
+                                                            ),
+                                                            onPressed: () =>
+                                                                _openNote(note),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
-                                                    onPressed: () => _openNote(note),
-                                                  ),
-                                                ),
-                                              );
-                                            });
+                                                  );
+                                                });
                                           }),
                                         ],
                                       ],

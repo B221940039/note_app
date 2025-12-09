@@ -11,6 +11,12 @@ class NoteModel {
   final String? audioPath;
   final String? videoPath;
   final List<Map<String, dynamic>> todoItems;
+  final bool isSaved;
+  final bool isHidden;
+  final bool isDeleted;
+  final bool isBold;
+  final bool isUnderline;
+  final bool isItalic;
 
   NoteModel({
     this.id,
@@ -22,6 +28,12 @@ class NoteModel {
     this.audioPath,
     this.videoPath,
     this.todoItems = const [],
+    this.isSaved = false,
+    this.isHidden = false,
+    this.isDeleted = false,
+    this.isBold = false,
+    this.isUnderline = false,
+    this.isItalic = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,6 +47,12 @@ class NoteModel {
       'audioPath': audioPath,
       'videoPath': videoPath,
       'todoItems': jsonEncode(todoItems),
+      'isSaved': isSaved ? 1 : 0,
+      'isHidden': isHidden ? 1 : 0,
+      'isDeleted': isDeleted ? 1 : 0,
+      'isBold': isBold ? 1 : 0,
+      'isUnderline': isUnderline ? 1 : 0,
+      'isItalic': isItalic ? 1 : 0,
     };
   }
 
@@ -51,6 +69,12 @@ class NoteModel {
       todoItems: map['todoItems'] != null
           ? List<Map<String, dynamic>>.from(jsonDecode(map['todoItems']))
           : [],
+      isSaved: map['isSaved'] == 1,
+      isHidden: map['isHidden'] == 1,
+      isDeleted: map['isDeleted'] == 1,
+      isBold: (map['isBold'] ?? 0) == 1,
+      isUnderline: (map['isUnderline'] ?? 0) == 1,
+      isItalic: (map['isItalic'] ?? 0) == 1,
     );
   }
 }

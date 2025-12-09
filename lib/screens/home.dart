@@ -6,6 +6,11 @@ import 'package:assigmentv4/models/note_model.dart';
 import 'package:assigmentv4/models/todo_model.dart';
 import 'package:assigmentv4/screens/note.dart';
 import 'package:assigmentv4/screens/todoscreen.dart';
+import 'package:assigmentv4/screens/allnotes.dart';
+import 'package:assigmentv4/screens/savednotes.dart';
+import 'package:assigmentv4/screens/hiddennotes.dart';
+import 'package:assigmentv4/screens/deletednotes.dart';
+import 'package:assigmentv4/core/utils/sample_data.dart';
 
 final TextEditingController _inputToDoController = TextEditingController();
 
@@ -77,17 +82,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _toggleTodo(int index, bool value) async {
     try {
       final todo = _userTodos[index];
-      if (value) {
-        // When completed, delete the todo
-        await DatabaseHelper.instance.deleteTodo(todo.id!);
-      } else {
-        final updatedTodo = todo.copyWith(isCompleted: value);
-        await DatabaseHelper.instance.updateTodo(updatedTodo.toMap());
-      }
+      final updatedTodo = todo.copyWith(isCompleted: !todo.isCompleted);
+      await DatabaseHelper.instance.updateTodo(updatedTodo.toMap());
       await _loadTodos();
       _loadNotes();
     } catch (e) {
       print('Error toggling todo: $e');
+    }
+  }
+
+  Future<void> _deleteUserTodo(int index) async {
+    try {
+      final todo = _userTodos[index];
+      await DatabaseHelper.instance.deleteTodo(todo.id!);
+      await _loadTodos();
+      _loadNotes();
+    } catch (e) {
+      print('Error deleting user todo: $e');
     }
   }
 
@@ -103,14 +114,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       final notesData = await DatabaseHelper.instance.getAllNotes();
-      _notes = notesData.map((noteMap) => NoteModel.fromMap(noteMap)).toList();
+      _notes = notesData
+          .map((noteMap) => NoteModel.fromMap(noteMap))
+          .where((note) => !note.isHidden) // Filter out hidden notes
+          .toList();
 
-      // Extract all unchecked todos from all notes
-      List<Map<String, dynamic>> allTodos = [];
+      // Extract only unchecked todos from notes (not user todos)
+      List<Map<String, dynamic>> noteTodos = [];
       for (var note in _notes) {
         for (var todo in note.todoItems) {
           if (todo['value'] != true) {
-            allTodos.add({
+            noteTodos.add({
               'title': todo['title'],
               'value': false,
               'noteId': note.id,
@@ -124,32 +138,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
 
-      // Add user standalone todos
-      for (var userTodo in _userTodos) {
-        if (!userTodo.isCompleted) {
-          allTodos.add({
-            'title': userTodo.title,
-            'value': false,
-            'createdDate':
-                userTodo.createdDate?.toIso8601String() ??
-                DateTime.now().toIso8601String(),
-            'deadline': userTodo.deadline?.toIso8601String(),
-            'isNoteTodo': false,
-          });
-        }
-      }
-
-      // Sort by createdDate (newest first)
-      allTodos.sort((a, b) {
+      // Sort note todos by createdDate (newest first)
+      noteTodos.sort((a, b) {
         DateTime dateA = DateTime.parse(a['createdDate']);
         DateTime dateB = DateTime.parse(b['createdDate']);
         return dateB.compareTo(dateA);
       });
 
-      // Take last 4 todos
-      _allUncheckedTodos = allTodos.length > 4
-          ? allTodos.sublist(allTodos.length - 4)
-          : allTodos;
+      _allUncheckedTodos = noteTodos;
     } catch (e) {
       print('Error loading notes: $e');
       _notes = [];
@@ -201,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('"${note.title}" устгагдлаа')));
+      ).showSnackBar(SnackBar(content: Text('"${note.title}" deleted')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -256,12 +252,77 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     size: 20,
                   ),
                 ),
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'logout') {
                     Navigator.of(context).pushReplacementNamed('/login');
+                  } else if (value == 'generate_sample') {
+                    // Show confirmation dialog
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Жишээ өгөгдөл үүсгэх'),
+                        content: const Text(
+                          'Одоо байгаа бүх өгөгдлийг устгаад 20 жишээ тэмдэглэл үүсгэх үү?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Болих'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Тийм'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      setState(() => _isLoading = true);
+                      try {
+                        await SampleDataGenerator.generateSampleNotes();
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '✅ 20 жишээ тэмдэглэл амжилттай үүслээ!',
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _loadNotes();
+                          _loadTodos();
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('❌ Алдаа гарлаа: $e')),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isLoading = false);
+                        }
+                      }
+                    }
                   }
                 },
                 itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'generate_sample',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.data_object,
+                          size: 18,
+                          color: Color(0xFF7C3AED),
+                        ),
+                        SizedBox(width: 8),
+                        Text('Жишээ өгөгдөл'),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: 'logout',
                     child: Row(
@@ -309,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             controller: _searchController,
                             onChanged: _onSearchChanged,
                             decoration: InputDecoration(
-                              hintText: 'Тэмдэглэл хайх...',
+                              hintText: 'Search notes...',
                               hintStyle: TextStyle(
                                 color: Colors.grey[400],
                                 fontSize: 15,
@@ -352,6 +413,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               .toList(),
                           noteTodos: _allUncheckedTodos,
                           inputController: _inputToDoController,
+                          useCompactLayout:
+                              true, // Use compact layout for home screen
                           onAddItem: (text) async {
                             DateTime? deadline;
                             await showDialog(
@@ -411,6 +474,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           },
                           onToggleItem: (index, value) async {
                             await _toggleTodo(index, value);
+                          },
+                          onDeleteUserTodo: (index) async {
+                            await _deleteUserTodo(index);
                           },
                           onViewAll: () {
                             Navigator.push(
@@ -473,6 +539,97 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             _openNote(note);
                           },
                         ),
+
+                        // Action Cards Row
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildActionCard(
+                                icon: Icons.description,
+                                label: 'Бүх тэмдэглэл',
+                                color: Colors.grey[400]!,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AllNotesScreen(),
+                                    ),
+                                  ).then((_) {
+                                    _loadNotes();
+                                    _loadTodos();
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildActionCard(
+                                icon: Icons.visibility_off,
+                                label: 'Нууцласан',
+                                color: Colors.blue,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const HiddenNotesScreen(),
+                                    ),
+                                  ).then((_) {
+                                    _loadNotes();
+                                    _loadTodos();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildActionCard(
+                                icon: Icons.star,
+                                label: 'Хадгалсан',
+                                color: Colors.amber,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SavedNotesScreen(),
+                                    ),
+                                  ).then((_) {
+                                    _loadNotes();
+                                    _loadTodos();
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildActionCard(
+                                icon: Icons.delete,
+                                label: 'Хогийн сав',
+                                color: Colors.red,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const DeletedNotesScreen(),
+                                    ),
+                                  ).then((_) {
+                                    _loadNotes();
+                                    _loadTodos();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
                         // 🟩 Notes Section
                         const SizedBox(height: 16),
                         _filteredNotes.isEmpty && _isSearching
@@ -559,6 +716,57 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2937),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -59,6 +59,52 @@ class DatabaseHelper {
         print('Error upgrading todos table: $e');
       }
     }
+    if (oldVersion < 4) {
+      // Add isSaved column to notes table
+      try {
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isSaved INTEGER NOT NULL DEFAULT 0',
+        );
+      } catch (e) {
+        print('Error adding isSaved column: $e');
+      }
+    }
+    if (oldVersion < 5) {
+      // Add isHidden column to notes table
+      try {
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isHidden INTEGER NOT NULL DEFAULT 0',
+        );
+      } catch (e) {
+        print('Error adding isHidden column: $e');
+      }
+    }
+    if (oldVersion < 6) {
+      // Add isDeleted column to notes table
+      try {
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0',
+        );
+      } catch (e) {
+        print('Error adding isDeleted column: $e');
+      }
+    }
+    if (oldVersion < 7) {
+      // Add text formatting columns to notes table
+      try {
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isBold INTEGER NOT NULL DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isUnderline INTEGER NOT NULL DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE notes ADD COLUMN isItalic INTEGER NOT NULL DEFAULT 0',
+        );
+      } catch (e) {
+        print('Error adding text formatting columns: $e');
+      }
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -76,7 +122,13 @@ class DatabaseHelper {
         dateCreated $textType,
         audioPath TEXT,
         videoPath TEXT,
-        todoItems TEXT
+        todoItems TEXT,
+        isSaved INTEGER NOT NULL DEFAULT 0,
+        isHidden INTEGER NOT NULL DEFAULT 0,
+        isDeleted INTEGER NOT NULL DEFAULT 0,
+        isBold INTEGER NOT NULL DEFAULT 0,
+        isUnderline INTEGER NOT NULL DEFAULT 0,
+        isItalic INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -99,7 +151,12 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getAllNotes() async {
     final db = await database;
-    return await db.query('notes', orderBy: 'dateCreated DESC');
+    return await db.query(
+      'notes',
+      where: 'isDeleted = ?',
+      whereArgs: [0],
+      orderBy: 'dateCreated DESC',
+    );
   }
 
   Future<int> updateNote(Map<String, dynamic> note) async {
@@ -114,7 +171,27 @@ class DatabaseHelper {
 
   Future<int> deleteNote(int id) async {
     final db = await database;
+    return await db.update(
+      'notes',
+      {'isDeleted': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> permanentDeleteNote(int id) async {
+    final db = await database;
     return await db.delete('notes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> restoreNote(int id) async {
+    final db = await database;
+    return await db.update(
+      'notes',
+      {'isDeleted': 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // User Todo CRUD operations (standalone todos)
@@ -144,6 +221,46 @@ class DatabaseHelper {
   }
 
   // Note todos are stored within the notes table as part of the todoItems JSON field
+
+  // Get saved notes
+  Future<List<Map<String, dynamic>>> getSavedNotes() async {
+    final db = await database;
+    return await db.query(
+      'notes',
+      where: 'isSaved = ? AND isDeleted = ?',
+      whereArgs: [1, 0],
+      orderBy: 'dateCreated DESC',
+    );
+  }
+
+  // Get hidden notes
+  Future<List<Map<String, dynamic>>> getHiddenNotes() async {
+    final db = await database;
+    return await db.query(
+      'notes',
+      where: 'isHidden = ? AND isDeleted = ?',
+      whereArgs: [1, 0],
+      orderBy: 'dateCreated DESC',
+    );
+  }
+
+  // Get deleted notes
+  Future<List<Map<String, dynamic>>> getDeletedNotes() async {
+    final db = await database;
+    return await db.query(
+      'notes',
+      where: 'isDeleted = ?',
+      whereArgs: [1],
+      orderBy: 'dateCreated DESC',
+    );
+  }
+
+  // Clear all data
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete('notes');
+    await db.delete('todos');
+  }
 
   Future<void> close() async {
     final db = await database;

@@ -110,16 +110,26 @@ class _RecordVideoWidgetState extends State<RecordVideoWidget> {
             _cameraController != null &&
             _cameraController!.value.isInitialized)
           AspectRatio(
-            aspectRatio: _cameraController!.value.aspectRatio,
+            aspectRatio: 1.0, // Force 1:1 aspect ratio
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8.0),
               ), // Smooth top border
-              child: CameraPreview(_cameraController!),
+              child: OverflowBox(
+                alignment: Alignment.center,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _cameraController!.value.previewSize!.height,
+                    height: _cameraController!.value.previewSize!.height,
+                    child: CameraPreview(_cameraController!),
+                  ),
+                ),
+              ),
             ),
           )
         else
-          Container(height: 200, color: Colors.black),
+          AspectRatio(aspectRatio: 1.0, child: Container(color: Colors.black)),
         Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(color: Colors.black),

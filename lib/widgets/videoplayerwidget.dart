@@ -149,6 +149,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             // Video player area
             if (_isInitialized)
               Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Video display with play overlay
                   GestureDetector(
@@ -156,11 +157,16 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                     child: Container(
                       color: Colors.black,
                       child: AspectRatio(
-                        aspectRatio: _controller.value.aspectRatio,
+                        aspectRatio: 1.0, // Display as 1:1 square
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            VideoPlayer(_controller),
+                            Center(
+                              child: AspectRatio(
+                                aspectRatio: _controller.value.aspectRatio,
+                                child: VideoPlayer(_controller),
+                              ),
+                            ),
                             // Play/Pause overlay
                             AnimatedOpacity(
                               opacity: _isPlaying ? 0.0 : 1.0,

@@ -4,6 +4,7 @@ import '../widgets/todo.dart';
 import '../widgets/recordaudio.dart';
 import '../widgets/audioplayerwidget.dart';
 import '../widgets/videoplayerwidget.dart';
+import '../widgets/typography_picker.dart';
 import 'dart:io';
 import '../database/database_helper.dart';
 import '../models/note_model.dart';
@@ -29,9 +30,16 @@ class _NoteState extends State<Note> {
 
   Color? _selectedColor;
   DateTime dateCreated = DateTime.now();
-  String? _audioPath;
-  String? _videoPath;
+  List<String> _audioPaths = [];
+  List<String> _videoPaths = [];
   bool _isEditMode = false;
+  bool _isSaved = false;
+  bool _isHidden = false;
+
+  // Text formatting states
+  bool _isBold = false;
+  bool _isUnderline = false;
+  bool _isItalic = false;
 
   @override
   void initState() {
@@ -42,9 +50,20 @@ class _NoteState extends State<Note> {
       _contentController.text = widget.note!.content;
       _selectedColor = widget.note!.color;
       dateCreated = widget.note!.dateCreated;
-      _audioPath = widget.note!.audioPath;
-      _videoPath = widget.note!.videoPath;
+      if (widget.note!.audioPath != null &&
+          widget.note!.audioPath!.isNotEmpty) {
+        _audioPaths = [widget.note!.audioPath!];
+      }
+      if (widget.note!.videoPath != null &&
+          widget.note!.videoPath!.isNotEmpty) {
+        _videoPaths = [widget.note!.videoPath!];
+      }
       _checkedLists.addAll(widget.note!.todoItems);
+      _isSaved = widget.note!.isSaved;
+      _isHidden = widget.note!.isHidden;
+      _isBold = widget.note!.isBold;
+      _isUnderline = widget.note!.isUnderline;
+      _isItalic = widget.note!.isItalic;
       // Parse tags from comma-separated string
       if (widget.note!.tag.isNotEmpty && widget.note!.tag != 'Untagged') {
         _tags.addAll(widget.note!.tag.split(',').map((e) => e.trim()));
@@ -57,44 +76,12 @@ class _NoteState extends State<Note> {
     }
   }
 
-  // Available colors for notes
-  final List<Color?> _noteColors = [
-    null,
-    Color(0xFFC4EFAC),
-    Color(0xFF9FF2E1),
-    Color(0xFFFFDAD7),
-    Color(0xFFE6E762),
-    Color(0xFFE74AC5),
-    Colors.teal[300],
-    Colors.cyan[300],
-    Colors.blue[300],
-    Colors.indigo[300],
-    Colors.purple[300],
-    Colors.pink[300],
-  ];
-
-  // Tag colors that match note colors
-  final List<Color> _tagColors = [
-    Color(0xFF9E9E9E), // Default gray for null note color
-    Color(0xFF7CB342), // Green - Matches C4EFAC
-    Color(0xFF26A69A), // Teal - Matches 9FF2E1
-    Color(0xFFEF5350), // Red - Matches FFDAD7
-    Color(0xFFFFA726), // Orange - Matches E6E762
-    Color(0xFFAB47BC), // Purple - Matches E74AC5
-    Color(0xFF00897B), // Dark Teal - Matches teal[300]
-    Color(0xFF00ACC1), // Cyan - Matches cyan[300]
-    Color(0xFF42A5F5), // Blue - Matches blue[300]
-    Color(0xFF5C6BC0), // Indigo - Matches indigo[300]
-    Color(0xFF7E57C2), // Deep Purple - Matches purple[300]
-    Color(0xFFEC407A), // Pink - Matches pink[300]
-  ];
-
   Color _getTagColor() {
-    if (_selectedColor == null) return _tagColors[0];
-    final index = _noteColors.indexOf(_selectedColor);
-    return index >= 0 && index < _tagColors.length
-        ? _tagColors[index]
-        : _tagColors[0];
+    if (_selectedColor == null) return TypographyPicker.tagColors[0];
+    final index = TypographyPicker.noteColors.indexOf(_selectedColor);
+    return index >= 0 && index < TypographyPicker.tagColors.length
+        ? TypographyPicker.tagColors[index]
+        : TypographyPicker.tagColors[0];
   }
 
   @override
@@ -107,106 +94,41 @@ class _NoteState extends State<Note> {
     super.dispose();
   }
 
-  // ------------------- Color Picker -------------------
+  // ------------------- Typography Picker -------------------
   void _showColorPicker() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Choose Color',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
-                children: List.generate(_noteColors.length, (index) {
-                  final color = _noteColors[index];
-                  final tagColor = _tagColors[index];
-                  final isSelected = _selectedColor == color;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedColor = color;
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: color ?? Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: color == null
-                                  ? Colors.grey
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: color == null
-                                      ? Colors.black
-                                      : Colors.white,
-                                  size: 28,
-                                )
-                              : (color == null
-                                    ? Icon(
-                                        Icons.format_color_reset,
-                                        color: Colors.grey[600],
-                                      )
-                                    : null),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tagColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text(
-                            'Tag',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return TypographyPicker(
+              selectedColor: _selectedColor,
+              isBold: _isBold,
+              isUnderline: _isUnderline,
+              isItalic: _isItalic,
+              onColorChanged: (color) {
+                setState(() {
+                  _selectedColor = color;
+                });
+              },
+              onBoldToggle: () {
+                setState(() => _isBold = !_isBold);
+                setModalState(() {}); // Rebuild modal to show changes
+                _saveNote(); // Save immediately when formatting changes
+              },
+              onUnderlineToggle: () {
+                setState(() => _isUnderline = !_isUnderline);
+                setModalState(() {}); // Rebuild modal to show changes
+                _saveNote(); // Save immediately when formatting changes
+              },
+              onItalicToggle: () {
+                setState(() => _isItalic = !_isItalic);
+                setModalState(() {}); // Rebuild modal to show changes
+                _saveNote(); // Save immediately when formatting changes
+              },
+            );
+          },
         );
       },
     );
@@ -227,14 +149,14 @@ class _NoteState extends State<Note> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'More Options',
+                'Нэмэлт сонголтууд',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               if (_isEditMode)
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Delete Note'),
+                  title: const Text('Тэмдэглэл устгах'),
                   onTap: () {
                     Navigator.pop(context);
                     _deleteNote();
@@ -264,9 +186,15 @@ class _NoteState extends State<Note> {
       tag: tag,
       color: _selectedColor,
       dateCreated: _isEditMode ? widget.note!.dateCreated : DateTime.now(),
-      audioPath: _audioPath,
-      videoPath: _videoPath,
+      audioPath: _audioPaths.isNotEmpty ? _audioPaths.first : null,
+      videoPath: _videoPaths.isNotEmpty ? _videoPaths.first : null,
       todoItems: _checkedLists,
+      isSaved: _isSaved,
+      isHidden: _isHidden,
+      isDeleted: _isEditMode ? widget.note!.isDeleted : false,
+      isBold: _isBold,
+      isUnderline: _isUnderline,
+      isItalic: _isItalic,
     );
 
     try {
@@ -293,8 +221,8 @@ class _NoteState extends State<Note> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note?'),
+        title: const Text('Тэмдэглэл устгах'),
+        content: const Text('Та энэ тэмдэглэлийг устгахыг хүсч байна уу?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -326,21 +254,21 @@ class _NoteState extends State<Note> {
     print('Recording complete: $filePath (isVideo: $isVideo)');
     setState(() {
       if (isVideo) {
-        _videoPath = filePath;
-        print('Video path set: $_videoPath');
+        _videoPaths.add(filePath);
+        print('Video path added: $filePath');
       } else {
-        _audioPath = filePath;
-        print('Audio path set: $_audioPath');
+        _audioPaths.add(filePath);
+        print('Audio path added: $filePath');
       }
     });
   }
 
-  void _deleteAudio() async {
+  void _deleteAudio(int index) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Audio'),
-        content: const Text('Are you sure you want to delete this audio?'),
+        title: const Text('Аудио устгах'),
+        content: const Text('Та энэ аудиог устгахыг хүсч байна уу?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -355,14 +283,14 @@ class _NoteState extends State<Note> {
       ),
     );
 
-    if (confirmed == true && _audioPath != null) {
+    if (confirmed == true && index < _audioPaths.length) {
       try {
-        final file = File(_audioPath!);
+        final file = File(_audioPaths[index]);
         if (await file.exists()) {
           await file.delete();
         }
         setState(() {
-          _audioPath = null;
+          _audioPaths.removeAt(index);
         });
         if (!mounted) return;
       } catch (e) {
@@ -371,12 +299,12 @@ class _NoteState extends State<Note> {
     }
   }
 
-  void _deleteVideo() async {
+  void _deleteVideo(int index) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Video'),
-        content: const Text('Are you sure you want to delete this video?'),
+        title: const Text('Видео устгах'),
+        content: const Text('Та энэ видеог устгахыг хүсч байна уу?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -391,14 +319,14 @@ class _NoteState extends State<Note> {
       ),
     );
 
-    if (confirmed == true && _videoPath != null) {
+    if (confirmed == true && index < _videoPaths.length) {
       try {
-        final file = File(_videoPath!);
+        final file = File(_videoPaths[index]);
         if (await file.exists()) {
           await file.delete();
         }
         setState(() {
-          _videoPath = null;
+          _videoPaths.removeAt(index);
         });
         if (!mounted) return;
       } catch (e) {
@@ -422,16 +350,97 @@ class _NoteState extends State<Note> {
           backgroundColor: Colors.white,
           elevation: 0,
           title: Text(
-            _isEditMode ? 'Edit Note' : 'New Note',
+            _isEditMode ? 'Тэмдэглэл засах' : 'Шинэ тэмдэглэл',
             style: const TextStyle(color: Colors.black),
           ),
           iconTheme: const IconThemeData(color: Colors.black),
           actions: [
-            IconButton(
-              onPressed: _saveNote,
-              icon: const Icon(Icons.save),
-              tooltip: 'Save note',
-            ),
+            if (_isEditMode)
+              IconButton(
+                onPressed: () async {
+                  final newIsSavedState = !_isSaved;
+
+                  final updatedNote = NoteModel(
+                    id: widget.note!.id,
+                    title: _titleController.text.trim(),
+                    content: _contentController.text.trim(),
+                    tag: _tags.isEmpty ? 'Untagged' : _tags.join(','),
+                    color: _selectedColor,
+                    dateCreated: widget.note!.dateCreated,
+                    audioPath: _audioPaths.isNotEmpty
+                        ? _audioPaths.first
+                        : null,
+                    videoPath: _videoPaths.isNotEmpty
+                        ? _videoPaths.first
+                        : null,
+                    todoItems: _checkedLists,
+                    isSaved: newIsSavedState,
+                    isHidden: _isHidden,
+                    isDeleted: widget.note!.isDeleted,
+                  );
+
+                  await DatabaseHelper.instance.updateNote(updatedNote.toMap());
+
+                  setState(() {
+                    _isSaved = newIsSavedState;
+                  });
+
+                  if (!mounted) return;
+                },
+                icon: Icon(
+                  _isSaved ? Icons.star : Icons.star_border,
+                  color: _isSaved ? Colors.amber : null,
+                ),
+                tooltip: _isSaved ? 'Хадгалсанаас хасах' : 'Хадгалах',
+              ),
+            if (_isEditMode)
+              IconButton(
+                onPressed: () async {
+                  final newIsHiddenState = !_isHidden;
+
+                  final updatedNote = NoteModel(
+                    id: widget.note!.id,
+                    title: _titleController.text.trim(),
+                    content: _contentController.text.trim(),
+                    tag: _tags.isEmpty ? 'Untagged' : _tags.join(','),
+                    color: _selectedColor,
+                    dateCreated: widget.note!.dateCreated,
+                    audioPath: _audioPaths.isNotEmpty
+                        ? _audioPaths.first
+                        : null,
+                    videoPath: _videoPaths.isNotEmpty
+                        ? _videoPaths.first
+                        : null,
+                    todoItems: _checkedLists,
+                    isSaved: _isSaved,
+                    isHidden: newIsHiddenState,
+                    isDeleted: widget.note!.isDeleted,
+                  );
+
+                  await DatabaseHelper.instance.updateNote(updatedNote.toMap());
+
+                  setState(() {
+                    _isHidden = newIsHiddenState;
+                  });
+
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        newIsHiddenState
+                            ? 'Тэмдэглэл нуугдлаа'
+                            : 'Тэмдэглэл нуухаас хасагдлаа',
+                      ),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  _isHidden ? Icons.visibility_off : Icons.visibility,
+                  color: _isHidden ? Colors.blue : null,
+                ),
+                tooltip: _isHidden ? 'Нуухаас гаргах' : 'Нуух',
+              ),
           ],
         ),
         body: Column(
@@ -547,8 +556,8 @@ class _NoteState extends State<Note> {
                                     child: IntrinsicWidth(
                                       child: TextField(
                                         controller: _tagController,
-                                        decoration: const InputDecoration(
-                                          hintText: 'Таг...',
+                                        decoration: InputDecoration(
+                                          hintText: 'Түлхүүр үг...',
                                           hintStyle: TextStyle(
                                             fontSize: 14,
                                             color: Colors.white70,
@@ -582,6 +591,8 @@ class _NoteState extends State<Note> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Text formatting toolbar
+
                     // Note content
                     Container(
                       padding: const EdgeInsets.only(
@@ -611,9 +622,18 @@ class _NoteState extends State<Note> {
                           hintText: 'Тэмдэглэлээ энд бичээрэй...',
                           border: InputBorder.none,
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Color.fromARGB(255, 16, 17, 16),
                           fontSize: 16,
+                          fontWeight: _isBold
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          decoration: _isUnderline
+                              ? TextDecoration.underline
+                              : TextDecoration.none,
+                          fontStyle: _isItalic
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                         ),
                       ),
                     ),
@@ -623,6 +643,7 @@ class _NoteState extends State<Note> {
                     ToDo(
                       checkedLists: _checkedLists,
                       inputController: _inputToDoController,
+                      showAllTodos: true, // Show all todos in note screen
                       onAddItem: (text) {
                         setState(() {
                           _checkedLists.add({'title': text, 'value': false});
@@ -634,28 +655,39 @@ class _NoteState extends State<Note> {
                           _checkedLists[index]['value'] = value;
                         });
                       },
+                      onDeleteUserTodo: (index) {
+                        setState(() {
+                          _checkedLists.removeAt(index);
+                        });
+                      },
                     ),
 
-                    // Audio Player
-                    if (_audioPath != null)
-                      AudioPlayerWidget(
-                        audioPath: _audioPath!,
-                        onDelete: _deleteAudio,
-                      ),
+                    // Audio Players
+                    ..._audioPaths.asMap().entries.map((entry) {
+                      return AudioPlayerWidget(
+                        audioPath: entry.value,
+                        onDelete: () => _deleteAudio(entry.key),
+                      );
+                    }).toList(),
 
-                    // Video Player
-                    if (_videoPath != null)
-                      VideoPlayerWidget(
-                        videoPath: _videoPath!,
-                        onDelete: _deleteVideo,
-                      ),
+                    // Video Players
+                    ..._videoPaths.asMap().entries.map((entry) {
+                      return VideoPlayerWidget(
+                        videoPath: entry.value,
+                        onDelete: () => _deleteVideo(entry.key),
+                      );
+                    }).toList(),
 
                     const Divider(),
 
                     // Date created
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
-                      children: [Text(dateCreated.toString())],
+                      children: [
+                        Text(
+                          '${dateCreated.year}-${dateCreated.month.toString().padLeft(2, '0')}-${dateCreated.day.toString().padLeft(2, '0')} ${dateCreated.hour.toString().padLeft(2, '0')}:${dateCreated.minute.toString().padLeft(2, '0')}',
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -690,7 +722,7 @@ class _NoteState extends State<Note> {
                   IconButton(
                     onPressed: _showColorPicker,
                     icon: const Icon(Icons.color_lens),
-                    tooltip: 'Change color',
+                    tooltip: 'Өнгө солих',
                   ),
                   IconButton(
                     onPressed: () {
@@ -707,7 +739,7 @@ class _NoteState extends State<Note> {
                     },
                     icon: Icon(
                       Icons.mic,
-                      color: _audioPath != null ? Colors.green : null,
+                      color: _audioPaths.isNotEmpty ? Colors.green : null,
                     ),
                   ),
                   IconButton(
@@ -724,14 +756,14 @@ class _NoteState extends State<Note> {
                     },
                     icon: Icon(
                       Icons.videocam,
-                      color: _videoPath != null ? Colors.green : null,
+                      color: _videoPaths.isNotEmpty ? Colors.green : null,
                     ),
                   ),
                   IconButton(
                     onPressed: _showMoreOptions,
 
                     icon: const Icon(Icons.more_vert),
-                    tooltip: 'More options',
+                    tooltip: 'Нэмэлт сонголтууд',
                   ),
                 ],
               ),
