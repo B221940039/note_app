@@ -357,7 +357,7 @@ class ToDo extends StatelessWidget {
                                               ),
                                             ),
                                             Text(
-                                              'from: ${noteTodo['noteTitle']}',
+                                              'тэмд: ${noteTodo['noteTitle']}',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
@@ -570,7 +570,7 @@ class ToDo extends StatelessWidget {
                                           ),
                                         ),
                                         Text(
-                                          'from: ${noteTodo['noteTitle']}',
+                                          'тэмд: ${noteTodo['noteTitle']}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(

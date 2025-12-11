@@ -203,7 +203,7 @@ class _TodoScreenState extends State<TodoScreen> {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'All Reminders',
+                      'Бүх сануулга',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -245,7 +245,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                         ),
                                       ),
                                       const Text(
-                                        'Active',
+                                        'Идэвхтэй',
                                         style: TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
@@ -269,7 +269,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                         ),
                                       ),
                                       const Text(
-                                        'Completed',
+                                        'Дууссан',
                                         style: TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
@@ -293,7 +293,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                         ),
                                       ),
                                       const Text(
-                                        'Total',
+                                        'Нийт',
                                         style: TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
@@ -327,7 +327,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                           ),
                                           const SizedBox(height: 16),
                                           Text(
-                                            'No todos yet',
+                                            'Сануулга байхгүй байна',
                                             style: TextStyle(
                                               fontSize: 18,
                                               color: Colors.grey[600],
@@ -346,7 +346,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                               bottom: 12,
                                             ),
                                             child: Text(
-                                              'Your Active Todos',
+                                              'Таны идэвхтэй сануулга',
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -413,7 +413,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                               bottom: 12,
                                             ),
                                             child: Text(
-                                              'Active Note Todos',
+                                              'Тэмдэглэлийн идэвхтэй сануулга',
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -462,7 +462,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                                                 .start,
                                                         children: [
                                                           Text(
-                                                            'from: ${note.title}',
+                                                            'эх: ${note.title}',
                                                             style:
                                                                 const TextStyle(
                                                                   fontSize: 12,
@@ -548,7 +548,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                               bottom: 12,
                                             ),
                                             child: Text(
-                                              'Completed Todos',
+                                              'Дууссан сануулга',
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -679,7 +679,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                                                 .start,
                                                         children: [
                                                           Text(
-                                                            'from: ${note.title}',
+                                                            'эх: ${note.title}',
                                                             style:
                                                                 const TextStyle(
                                                                   fontSize: 12,
@@ -762,7 +762,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                   child: TextField(
                                     controller: _inputController,
                                     decoration: InputDecoration(
-                                      hintText: 'Add new todo...',
+                                      hintText: 'Шинэ сануулга нэмэх...',
                                       prefixIcon: const Icon(
                                         Icons.add,
                                         color: Color(0xFF7C3AED),

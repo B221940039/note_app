@@ -1,15 +1,24 @@
 import 'package:assigmentv4/screens/note.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login.dart';
 import 'screens/register.dart';
 import 'screens/home.dart';
+import 'screens/onboarding_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final bool hasCompletedOnboarding =
+      prefs.getBool('onboarding_complete') ?? false;
+
+  runApp(MyApp(hasCompletedOnboarding: hasCompletedOnboarding));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool hasCompletedOnboarding;
+
+  const MyApp({super.key, required this.hasCompletedOnboarding});
 
   // This widget is the root of your application.
   @override
@@ -34,12 +43,15 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: hasCompletedOnboarding
+          ? const HomeScreen()
+          : const OnboardingScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
         '/note': (context) => const Note(),
+        '/onboarding': (context) => const OnboardingScreen(),
       },
     );
   }
